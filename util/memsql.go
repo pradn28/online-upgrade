@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"log"
 	"strings"
 	"time"
 )
@@ -30,6 +31,9 @@ func ConnectToMemSQL(config Config) error {
 		config.MasterPort,
 		connParams,
 	)
+
+	log.Printf("Connecting to MemSQL %s", connString)
+
 	db, err = sqlx.Open("mysql", connString)
 	if err != nil {
 		return err

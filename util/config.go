@@ -7,6 +7,7 @@ type Config struct {
 	MasterPort int
 	MasterUser string
 	MasterPass string
+	LogPath    string
 }
 
 var configData = Config{
@@ -14,6 +15,7 @@ var configData = Config{
 	MasterPort: 3306,
 	MasterUser: "root",
 	MasterPass: "",
+	LogPath:    "online-upgrade.log",
 }
 
 func init() {
@@ -32,6 +34,10 @@ func init() {
 	flag.StringVar(
 		&configData.MasterPass, "password", configData.MasterPass,
 		"The Master Aggregator password")
+
+	flag.StringVar(
+		&configData.LogPath, "log-path", configData.LogPath,
+		"Where to write out the full audit log")
 }
 
 func ParseFlags() Config {
