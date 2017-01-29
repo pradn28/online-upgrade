@@ -1,0 +1,6 @@
+package: github.com/memsql/online-upgrade
+import:
+- package: github.com/go-sql-driver/mysql
+- package: github.com/jmoiron/sqlx
+testImport:
+- package: github.com/stretchr/testify

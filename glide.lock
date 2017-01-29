@@ -1,0 +1,22 @@
+hash: 9bc5c8f30afb5fb2840579e20a1c3747ded7adb3629b5afc1549a96078d297c4
+updated: 2017-01-28T18:46:51.381909853-08:00
+imports:
+- name: github.com/go-sql-driver/mysql
+  version: 1309049fd598c1faa0290fd70ab1afde2b6df0f9
+- name: github.com/jmoiron/sqlx
+  version: 398dd5876282499cdfd4cb8ea0f31a672abe9495
+  subpackages:
+  - reflectx
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 2402e8e7a02fc811447d11f881aa9746cdc57983
+  subpackages:
+  - assert
