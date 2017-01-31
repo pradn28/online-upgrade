@@ -2,7 +2,7 @@ package testutil
 
 import (
 	"github.com/codeskyblue/go-sh"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
@@ -25,7 +25,7 @@ func init() {
 func ClusterInABox(t *testing.T) func() {
 	// Start Ops
 	err := sh.Command("memsql-ops", "start").Run()
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	// Deploy Master
 	err = sh.Command(
@@ -34,7 +34,7 @@ func ClusterInABox(t *testing.T) func() {
 		"--role", "master",
 		"--version-hash", MEMSQL_VERSION_1,
 	).Run()
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	// Deploy Leaf
 	err = sh.Command(
@@ -44,10 +44,10 @@ func ClusterInABox(t *testing.T) func() {
 		"--port", "3307",
 		"--version-hash", MEMSQL_VERSION_1,
 	).Run()
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
-	err = util.OpsWaitMemsqlOnline()
-	assert.Nil(t, err)
+	err = util.OpsWaitMemsqlOnlineConnected()
+	require.Nil(t, err)
 
 	return func() {
 		// Stop nodes
@@ -57,7 +57,7 @@ func ClusterInABox(t *testing.T) func() {
 			"--hard-stop",
 			"--all",
 		).Run()
-		assert.Nil(t, err)
+		require.Nil(t, err)
 
 		// Delete nodes
 		err = sh.Command(
@@ -66,6 +66,6 @@ func ClusterInABox(t *testing.T) func() {
 			"--delete-without-prompting",
 			"--all",
 		).Run()
-		assert.Nil(t, err)
+		require.Nil(t, err)
 	}
 }

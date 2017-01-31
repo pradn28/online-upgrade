@@ -34,7 +34,7 @@ func OpsMemsqlList() ([]memsqlInfo, error) {
 	return infos, nil
 }
 
-func OpsWaitMemsqlOnline() error {
+func OpsWaitMemsqlOnlineConnected() error {
 	return StateChange{
 		Target:  true,
 		Timeout: time.Second * 60,
@@ -45,7 +45,10 @@ func OpsWaitMemsqlOnline() error {
 			}
 			for i := range infos {
 				info := infos[i]
-				if info.State != "online" {
+				if info.State != "ONLINE" {
+					return false, nil
+				}
+				if info.ClusterState != "CONNECTED" {
 					return false, nil
 				}
 			}
