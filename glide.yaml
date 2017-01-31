@@ -2,5 +2,6 @@ package: github.com/memsql/online-upgrade
 import:
 - package: github.com/go-sql-driver/mysql
 - package: github.com/jmoiron/sqlx
+- package: github.com/codeskyblue/go-sh
 testImport:
 - package: github.com/stretchr/testify

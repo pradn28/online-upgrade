@@ -1,17 +1,20 @@
-hash: 9bc5c8f30afb5fb2840579e20a1c3747ded7adb3629b5afc1549a96078d297c4
-updated: 2017-01-28T18:46:51.381909853-08:00
+hash: 9f1379c4253520fa80bde2bc287618784bf53319230a6a9ff864683b252e0d0c
+updated: 2017-01-30T17:18:04.242561763-08:00
 imports:
+- name: github.com/codegangsta/inject
+  version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
+- name: github.com/codeskyblue/go-sh
+  version: b097669b1569203c3ce05a6b8717d43140fdb3d5
+- name: github.com/davecgh/go-spew
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  subpackages:
+  - spew
 - name: github.com/go-sql-driver/mysql
   version: 1309049fd598c1faa0290fd70ab1afde2b6df0f9
 - name: github.com/jmoiron/sqlx
   version: 398dd5876282499cdfd4cb8ea0f31a672abe9495
   subpackages:
   - reflectx
-testImports:
-- name: github.com/davecgh/go-spew
-  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
-  subpackages:
-  - spew
 - name: github.com/pmezard/go-difflib
   version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
@@ -20,3 +23,4 @@ testImports:
   version: 2402e8e7a02fc811447d11f881aa9746cdc57983
   subpackages:
   - assert
+testImports: []
