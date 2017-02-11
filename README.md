@@ -3,7 +3,7 @@
 pre-upgrade checks
  -> is HA setup
  -> ops is happy + healthy
- -> all leaves are online
+ -> all nodes are online
 
 snapshot all user databases
  -> connect to master

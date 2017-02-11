@@ -6,10 +6,11 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"strings"
+	"testing"
 	"time"
 )
 
-var db *sqlx.DB
+var dbConn *sqlx.DB
 
 func ConnectToMemSQL(config Config) error {
 	var err error
@@ -34,15 +35,26 @@ func ConnectToMemSQL(config Config) error {
 
 	log.Printf("Connecting to MemSQL %s", connString)
 
-	db, err = sqlx.Open("mysql", connString)
+	dbConn, err = sqlx.Open("mysql", connString)
 	if err != nil {
 		return err
 	}
 
-	db.SetConnMaxLifetime(time.Hour * 6)
-	db.SetMaxIdleConns(10)
+	dbConn.SetConnMaxLifetime(time.Hour * 6)
+	dbConn.SetMaxIdleConns(10)
 
-	return db.Ping()
+	return dbConn.Ping()
+}
+
+// TestGetDB exposes the private dbConn variable for testing.
+// Should not be used in any of the actual code - all queries should be
+// materialized as tested functions in this package instead.
+func TestGetDB(t *testing.T) *sqlx.DB {
+	if dbConn == nil {
+		t.Fatal("ConnectToMemSQL() must run before TestGetDB() can be called")
+	}
+
+	return dbConn
 }
 
 func DBGetVariable(varName string) (string, error) {
@@ -50,6 +62,32 @@ func DBGetVariable(varName string) (string, error) {
 		Name  string `db:"Variable_name"`
 		Value string `db:"Value"`
 	}
-	err := db.Get(&res, "SHOW VARIABLES LIKE ?", varName)
+	err := dbConn.Get(&res, "SHOW VARIABLES LIKE ?", varName)
 	return res.Value, err
+}
+
+func DBGetUserDatabases() ([]string, error) {
+	rows, err := dbConn.Query("SHOW DATABASES")
+	if err != nil {
+		return nil, err
+	}
+	dbs := make([]string, 0)
+	for rows.Next() {
+		var db string
+		err := rows.Scan(&db)
+		if err != nil {
+			return nil, err
+		}
+		if db != "information_schema" &&
+			db != "memsql" &&
+			db != "sharding" {
+			dbs = append(dbs, db)
+		}
+	}
+	return dbs, nil
+}
+
+func DBSnapshotDatabase(db string) error {
+	_, err := dbConn.Exec(fmt.Sprintf("SNAPSHOT DATABASE `%s`", db))
+	return err
 }

@@ -60,7 +60,8 @@ RUN memsql-ops start \
  && memsql-ops license-add --license-key $MEMSQL_LICENSE \
  && memsql-ops memsql-deploy --version-hash $MEMSQL_VERSION_5_5_12 \
  && memsql-ops memsql-deploy --port 3307 --version-hash $MEMSQL_VERSION_5_7_2 \
- && memsql-ops memsql-delete --all --delete-without-prompting
+ && memsql-ops memsql-delete --all --delete-without-prompting \
+ && memsql-ops stop
 
 # Code environment
 ENV GOPATH /go

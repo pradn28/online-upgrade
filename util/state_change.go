@@ -1,7 +1,7 @@
 package util
 
 /*
-This file mostly inspired by the state tracking code in Terraform
+This file is somewhat inspired by the state tracking code in Terraform
 	https://github.com/hashicorp/terraform
 	helper/resource/state.go
 */
@@ -22,7 +22,13 @@ type StateChange struct {
 	Refresh     StateRefreshFunc
 }
 
-func ExponentialBackoff(tries int) time.Duration {
+func ConstantRefresh(sleepTime time.Duration) func(int) time.Duration {
+	return func(_ int) time.Duration {
+		return sleepTime
+	}
+}
+
+func ExponentialBackoffRefresh(tries int) time.Duration {
 	n := math.Pow(2, float64(tries))
 	wait := time.Duration(n) * 100 * time.Millisecond
 	if wait > 10*time.Second {
@@ -30,6 +36,8 @@ func ExponentialBackoff(tries int) time.Duration {
 	}
 	return wait
 }
+
+var defaultRefreshFunc = ConstantRefresh(1)
 
 func (conf StateChange) WaitForState() error {
 	var result interface{}
@@ -52,7 +60,7 @@ func (conf StateChange) WaitForState() error {
 			}
 
 			if conf.NextRefresh == nil {
-				time.Sleep(ExponentialBackoff(tries))
+				time.Sleep(defaultRefreshFunc(tries))
 			} else {
 				time.Sleep(conf.NextRefresh(tries))
 			}
@@ -74,7 +82,7 @@ func (conf StateChange) WaitForState() error {
 	case <-time.After(conf.Timeout):
 		doneFlag = true
 		return fmt.Errorf(
-			"timeout while waiting for state to become '%s'",
+			"timeout while waiting for state to become '%v'",
 			conf.Target)
 	}
 }

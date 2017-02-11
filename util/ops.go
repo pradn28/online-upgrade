@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+type agentInfo struct {
+	AgentID string `json:"agent_id"`
+	Host    string `json:"host"`
+	Port    int    `json:"port"`
+	Role    string `json:"role"`
+	State   string `json:"state"`
+	Version string `json:"version"`
+}
+
 type memsqlInfo struct {
 	MemsqlID string `json:"memsql_id"`
 
@@ -17,6 +26,21 @@ type memsqlInfo struct {
 	ClusterState string `json:"cluster_state"`
 	RunState     string `json:"run_state"`
 	State        string `json:"state"`
+}
+
+func OpsAgentList() ([]agentInfo, error) {
+	var infos []agentInfo
+
+	err := sh.Command(
+		"memsql-ops",
+		"agent-list",
+		"--json",
+	).UnmarshalJSON(&infos)
+	if err != nil {
+		return nil, err
+	}
+
+	return infos, nil
 }
 
 func OpsMemsqlList() ([]memsqlInfo, error) {
@@ -34,7 +58,7 @@ func OpsMemsqlList() ([]memsqlInfo, error) {
 	return infos, nil
 }
 
-func OpsWaitMemsqlOnlineConnected() error {
+func OpsWaitMemsqlsOnlineConnected(numNodes int) error {
 	return StateChange{
 		Target:  true,
 		Timeout: time.Second * 60,
@@ -42,6 +66,9 @@ func OpsWaitMemsqlOnlineConnected() error {
 			infos, err := OpsMemsqlList()
 			if err != nil {
 				return false, err
+			}
+			if len(infos) < numNodes {
+				return false, nil
 			}
 			for i := range infos {
 				info := infos[i]
