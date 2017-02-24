@@ -1,0 +1,4 @@
+{
+    "project_id": "online-upgrade",
+    "conduit_uri" : "https:\/\/grizzly.memsql.com\/api\/"
+}
