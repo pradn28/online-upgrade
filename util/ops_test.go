@@ -4,8 +4,9 @@ import (
 	"github.com/memsql/online-upgrade/testutil"
 	"github.com/memsql/online-upgrade/util"
 
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOps(t *testing.T) {
@@ -33,5 +34,18 @@ func TestOps(t *testing.T) {
 	t.Run("OpsWaitMemsqlsOnlineConnected", func(t *testing.T) {
 		testutil.MustRun(t, "memsql-ops", "memsql-restart", "--all", "--async")
 		assert.Nil(t, util.OpsWaitMemsqlsOnlineConnected(2))
+	})
+
+	t.Run("GetNodeIDs", func(t *testing.T) {
+		nodeIDs, err := util.GetNodeIDs("LEAF")
+		assert.Nil(t, err)
+		assert.Regexp(t, "[0-9A-Z]{40}", nodeIDs[0])
+	})
+
+	// TODO pass in memsqlID to assert regex
+	t.Run("OpsMemsqlUpdateConfig", func(t *testing.T) {
+		memsqlID, _ := util.GetNodeIDs("MASTER")
+		err := util.OpsMemsqlUpdateConfig(memsqlID[0], "auto_attach", "ON", "--set-global")
+		assert.Nil(t, err)
 	})
 }

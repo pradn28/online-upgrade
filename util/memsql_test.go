@@ -10,15 +10,22 @@ import (
 )
 
 func TestMemsql(t *testing.T) {
-	defer testutil.ClusterSinglebox(t)()
+	// Need to use ClusterInABox to test DBSetVariable
+	defer testutil.ClusterInABox(t)()
 
 	require.Nil(t, util.ConnectToMemSQL(util.ParseFlags()))
 	defer testutil.CreateDatabase(t, "testing")()
 
-	t.Run("DBGetVariable", func(t *testing.T) {
-		varval, err := util.DBGetVariable("version_compile_os")
+	// Requires a master aggregator
+	t.Run("DBSetVariable", func(t *testing.T) {
+		err := util.DBSetVariable("SET @@GLOBAL.redundancy_level = 2")
 		assert.Nil(t, err)
-		assert.Equal(t, "Linux", varval)
+	})
+
+	t.Run("DBGetVariable", func(t *testing.T) {
+		varval, err := util.DBGetVariable("redundancy_level")
+		assert.Nil(t, err)
+		assert.Equal(t, "2", varval)
 	})
 
 	t.Run("DBGetUserDatabases", func(t *testing.T) {

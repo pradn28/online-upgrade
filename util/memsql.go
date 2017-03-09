@@ -66,6 +66,12 @@ func DBGetVariable(varName string) (string, error) {
 	return res.Value, err
 }
 
+// DBSetVariable sets database variables
+func DBSetVariable(db string) error {
+	_, err := dbConn.Exec(db)
+	return err
+}
+
 func DBGetUserDatabases() ([]string, error) {
 	rows, err := dbConn.Query("SHOW DATABASES")
 	if err != nil {

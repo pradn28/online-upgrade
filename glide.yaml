@@ -3,5 +3,6 @@ import:
 - package: github.com/go-sql-driver/mysql
 - package: github.com/jmoiron/sqlx
 - package: github.com/codeskyblue/go-sh
+- package: github.com/briandowns/spinner
 testImport:
 - package: github.com/stretchr/testify

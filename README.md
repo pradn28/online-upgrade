@@ -1,82 +1,53 @@
-# Online Upgrade steps from 5.x -> 5.x
+# Online Upgrade 
 
-pre-upgrade checks
- -> is HA setup
- -> ops is happy + healthy
- -> all nodes are online
+Online Upgrade is a Go project for upgrading MemSQL from 5.x -> 5.x
 
-snapshot all user databases
- -> connect to master
- -> for each database:
-    -> SNAPSHOT $database
+## Usage
 
-disable auto_attach, aggregator_failure_detection and leaf_failure_detection on master
- -> memsql-ops memsql-update-config...
+memsql-online-upgrade should be run from the master aggregator on the cluster that you intend to upgrade. 
 
-disable aggregator_failure_detection on each agg
- -> memsql-ops memsql-update-config
+```
+$ ./memsql-online-upgrade
+```
+`memsql-online-upgrade` will use the default host ("127.0.0.1"), username ("root") and port (3306), if not specified on the command line. For a full list of available options, you can the `-h` flag to `memsql-online-upgrade`.
 
-detach AG 1 leaf nodes once the AG 2 slaves are caught up
- -> connect to master
- -> for leaf in leaves:
-    DETACH LEAF $leaf:$port
+## Overview
 
-    TODO: verify detach semantics re: locking master writes
-    TODO: check sync replication?
+memsql-online-upgrade will execute various steps to upgrade you cluster without downtime.
 
-memsql-ops memsql-stop <master id>
+#### Logging
+Upon execution of the script, memsql-online-upgrade will create a log file in the current working directory. It will either create or append to the default log file ("online-upgrade.log") unless a file location is specified with `-log-path`.
 
-memsql-ops memsql-upgrade --skip-snapshot [ --memsql-id id ]...
+#### Health Check
+Health check will preform the following steps to ensure your cluster is ready and willing to be upgraded.
+- Redundancy level check. Redundancy level must be 2 (HA)
+- Agents Online. Check that all agents are in an ONLINE state.
+- Node Check. Verify all MemSQL node are ONLINE and CONNECTED
 
-memsql-ops memsql-start <master id>
+If any of these steps fail, memsql-online-upgrade will exit.
 
-attach AG 1 leaf nodes (no rebalance)
- -> connect to master
-    -> for leaf in leaves:
-        ATTACH LEAF $leaf:$port NO REBALANCE
+#### Snapshot
+Snapshots will be taken for all user databases. If any of these Snapshots fail, memsql-online-upgrade will exit. You can find additional information in the log file. 
 
-wait for the new leaves to catch up and come online
- -> each leaf in AG 1 needs to be online
+#### Update Config
 
-restore redundancy on user databases
- -> from master
+As part of the upgrade process, we must set some variables. We will set them off prior to the upgrade and back on again after the upgrade is complete.
 
-detach AG 2 leaf nodes (once partitions are caught up)
- -> from master
+- auto_attach, aggregator_failure_detection, leaf_failure_detection
+<!-- TODO -->
+<!-- Please add info on new steps here and dont forget your tests -->
 
-memsql-ops memsql-stop <master id>
 
-memsql-ops memsql-upgrade --skip-snapshot <memsql ids for leaves in availability group B>
+## Development
+<!-- TODO -->
+<!-- everything below here -->
+Lots of neat stuff goes here
 
-memsql-ops memsql-start <master id>
-
-attach AG 2 leaf nodes (no rebalance)
- -> connect to master
-    -> for leaf in leaves:
-        ATTACH LEAF $leaf:$port NO REBALANCE
-
-wait for all leaves to be happy
- -> each leaf in AG 1+2 needs to be online
-
-restore redundancy on user databases
- -> from master
-
-rebalance partitions on user databases (once they are caught up)
- -> from master
-
-for each child agg (or set of child aggs):
-    memsql-ops memsql-upgrade --skip-snapshot --memsql-id <child agg ids>
-
-memsql-ops memsql-stop <master id>
-
-memsql-ops memsql-upgrade --skip-snapshot --memsql-id <master id>
-
-wait for all nodes to be happy
- -> each leaf in AG 1+2 needs to be online
- -> aggs should be online + happy
-
-enable auto_attach, aggregator_failure_detection and leaf_failure_detection on master
- -> memsql-ops memsql-update-config...
-
-enable aggregator_failure_detection on each agg
- -> memsql-ops memsql-update-config...
+## Deployment
+<!-- TODO -->
+<!-- everything below here -->
+Quick and dirty.
+```
+go build -o memsql-online-upgrade main.go
+```
+Ship it!

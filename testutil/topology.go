@@ -1,11 +1,11 @@
 package testutil
 
 import (
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 
 	"github.com/memsql/online-upgrade/util"
+	"github.com/stretchr/testify/require"
 )
 
 var (
