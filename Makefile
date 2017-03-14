@@ -33,5 +33,5 @@ test-image-shell:
 	docker run -it \
 		-v $(PWD):/go/src/github.com/memsql/online-upgrade \
 		-w /go/src/github.com/memsql/online-upgrade \
-		memsql-online-upgrade
+		memsql-online-upgrade \
 		/bin/bash

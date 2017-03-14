@@ -63,6 +63,10 @@ RUN memsql-ops start \
  && memsql-ops memsql-delete --all --delete-without-prompting \
  && memsql-ops stop
 
+# Make sure the next time Ops starts it has a unique agent id
+RUN memsql-ops sqlite /var/lib/memsql-ops/data/topology.db -e "delete from agents" \
+ && memsql-ops sqlite /var/lib/memsql-ops/data/variables.db -e "delete from variables"
+
 # Code environment
 ENV GOPATH /go
 ENV PATH /go/bin:$PATH
