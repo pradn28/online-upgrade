@@ -52,4 +52,12 @@ func main() {
 	}
 	fmt.Println("All Configs updated")
 
+	// Detach leaves in the first AG
+	fmt.Println("Detaching Leaves in Availability Group 1")
+	if err := steps.DetachLeaves(1); err != nil {
+		fmt.Println("Failed while detaching leaves. Please check the logs for more information.\n", err)
+		log.Fatalf("Detaching Failed: %s\n", err)
+	}
+	fmt.Println("All leaves in Availability Group 1 detached successfully")
+
 }

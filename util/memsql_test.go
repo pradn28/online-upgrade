@@ -4,38 +4,59 @@ import (
 	"github.com/memsql/online-upgrade/testutil"
 	"github.com/memsql/online-upgrade/util"
 
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-func TestMemsql(t *testing.T) {
-	// Need to use ClusterInABox to test DBSetVariable
-	defer testutil.ClusterInABox(t)()
+func TestMemsqlHA(t *testing.T) {
+	defer testutil.ClusterHA(t)()
 
 	require.Nil(t, util.ConnectToMemSQL(util.ParseFlags()))
 	defer testutil.CreateDatabase(t, "testing")()
 
 	// Requires a master aggregator
+	t.Run("DBShowLeaves", func(t *testing.T) {
+		leaves, err := util.DBShowLeaves()
+		assert.Nil(t, err)
+		assert.Len(t, leaves, 4) // HA Cluster
+		assert.Equal(t, "online", leaves[0].State)
+	})
+
+}
+
+func TestMemsql(t *testing.T) {
+	defer testutil.ClusterInABox(t)()
+
+	require.Nil(t, util.ConnectToMemSQL(util.ParseFlags()))
+	defer testutil.CreateDatabase(t, "testing")()
+
+	t.Run("DBShowClusterStatus", func(t *testing.T) {
+		rows, err := util.DBShowClusterStatus()
+		assert.Nil(t, err)
+		assert.Equal(t, "testing", rows[0].Database)
+	})
+
 	t.Run("DBSetVariable", func(t *testing.T) {
-		err := util.DBSetVariable("SET @@GLOBAL.redundancy_level = 2")
+		err := util.DBSetVariable("SET @@GLOBAL.aggregator_failure_detection = OFF")
 		assert.Nil(t, err)
 	})
 
 	t.Run("DBGetVariable", func(t *testing.T) {
 		varval, err := util.DBGetVariable("redundancy_level")
 		assert.Nil(t, err)
-		assert.Equal(t, "2", varval)
+		assert.Equal(t, "1", varval)
+	})
+
+	t.Run("DBSnapshotDatabase", func(t *testing.T) {
+		err := util.DBSnapshotDatabase("testing")
+		assert.Nil(t, err)
 	})
 
 	t.Run("DBGetUserDatabases", func(t *testing.T) {
 		dbs, err := util.DBGetUserDatabases()
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"testing"}, dbs)
-	})
-
-	t.Run("DBSnapshotDatabase", func(t *testing.T) {
-		err := util.DBSnapshotDatabase("testing")
-		assert.Nil(t, err)
 	})
 }

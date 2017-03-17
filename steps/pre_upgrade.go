@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/memsql/online-upgrade/util"
 )
 
@@ -15,6 +17,14 @@ var (
 
 // PreUpgrade ensures that the MemSQL cluster is healthy
 func PreUpgrade() error {
+	// Create new spinner to show activity of health check
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Prefix = " "
+	s.Suffix = fmt.Sprint(" Running Health Check")
+	s.FinalMSG = fmt.Sprint(" ✓ Health Check complete\n")
+	s.Start()
+	defer s.Stop()
+
 	log.Printf("PreUpgrade Check Started")
 
 	// Check redundancy level. Redundancy level must be 2 (HA)

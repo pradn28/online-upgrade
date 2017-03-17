@@ -31,21 +31,83 @@ Snapshots will be taken for all user databases. If any of these Snapshots fail, 
 
 #### Update Config
 
-As part of the upgrade process, we must set some variables. We will set them off prior to the upgrade and back on again after the upgrade is complete.
+As part of the upgrade process, we must set some variables. We will set them "off" prior to the upgrade and back "on" again after the upgrade is complete.
 
 - auto_attach, aggregator_failure_detection, leaf_failure_detection
-<!-- TODO -->
+
+#### Detach Leaves
+
+Now we can start the process to detach the leaves in the first AG.
+
+But, before we do, we need to check a few more things.
+* Orphan Check - This will ensure there are not any orphan partitions in the cluster.
+* Master/Slave Check - Ensure that all masters and slaves are present.
+
+If all checks pass, we will detach the leaves in the first AG.
+
+All error and success messages are passed to stdout and the log file. 
+
+
+#### Upgrade Nodes
+
 <!-- Please add info on new steps here and dont forget your tests -->
 
 
 ## Development
-<!-- TODO -->
+<!-- TODO update development procedures -->
 <!-- everything below here -->
 Lots of neat stuff goes here
 
+#### Testing
+There are several ways to get stated with testing. Lets start with running `make` from within the memsql-online-upgrade repo directory (go-workspace/src/github.com/memsql/online-upgrade/).
+
+```
+[online-upgrade]$ make
+```
+Note that running `make` will download and install everything required for testing and will start testing all available tests. All test files should have the format `*_test.go`.
+
+On subsequent tests you can either run `make test`, `make test-one` or `make test-image-shell`. These are all explained below.
+
+By default make and make test will find all available tests by utilizing the output `glide nv`. The `glide nv` command, an alias for `glide novendor`, will be passed into go test `go test $(glide nv)` and will run over all directories of the project except the vendor directory.
+
+When you only want to run a single test, we can run `make test-one`, which excepts a package folder or a specific test. See the examples below.
+
+Testing a package (e.g. steps)
+```
+make test-one test=./steps/...
+```
+
+And a single test
+```
+make test-one test=./steps/detach_leaf_test.go
+```
+
+Want to test manually? Sure. You can do that too. You can simply run `go test <test>` from within the test shell. Start the test shell and run your test. The `test-image-shell` will spin up both master and child containers and drop you at a shell prompt. From here you can simply run your test. See the example below.
+
+```
+make test-image-shell
+```
+Now you should see a prompt like this.
+```
+root@online-upgrade-master:/go/src/github.com/memsql/online-upgrade#
+```
+Let go ahead and run a test. Note `-p 1` is required for running multiple tests at the same time due to `go test` invoking parallelization by default.
+```
+go test ./steps/pre_upgrade_test.go
+```
+go test -p 1 ./steps/... ./util/...
+```
+The test will run and either produce and error or a pass message like below.
+```
+ok  	command-line-arguments	59.890s
+```
+You can also pass in a `-v` to see whats going on during the test.
+
+For more information about testing, you can also take a peak at the Makefile. As was previously mentioned, we are spinning up an HA cluster during testing and there are several steps required to make this happen. 
+
+
 ## Deployment
-<!-- TODO -->
-<!-- everything below here -->
+<!-- TODO update deployment process -->
 Quick and dirty.
 ```
 go build -o memsql-online-upgrade main.go

@@ -15,7 +15,7 @@ func TestOps(t *testing.T) {
 	t.Run("OpsAgentList", func(t *testing.T) {
 		agents, err := util.OpsAgentList()
 		assert.Nil(t, err)
-		assert.Len(t, agents, 1)
+		assert.Len(t, agents, 2)
 		assert.Equal(t, "ONLINE", agents[0].State)
 	})
 
