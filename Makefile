@@ -5,7 +5,7 @@ endif
 
 .PHONY: test test-image-shell vendor
 # `make test` runs all tests $(shell glide nv) in the project.
-# NOTE: `-p 1` is required when running multiple tests that build a
+# `-p 1` is required when running multiple tests that build a
 # cluster. Without it, parallelization can occur causing
 # clusters to be built simultaneously and fail.
 # `make test` will build an HA cluster and will also run 
@@ -22,7 +22,7 @@ test: docker-clean docker-network vendor build-memsql
 		-v $(PWD):/go/src/github.com/memsql/online-upgrade \
 		-w /go/src/github.com/memsql/online-upgrade \
 		memsql-online-upgrade \
-		go test -p 1 -v $(test)
+		go test -p 1 -v -timeout 30m $(test)
 
 # Build the MemSQL Online Upgrade container
 build-memsql: Dockerfile
@@ -41,7 +41,11 @@ docker-network:
 # Test Image Shell spins up both master and child continers
 # You can ssh between the container as root using the password 
 # specified in the Dockerfile. (ssh root@online-upgrade-child)
-test-image-shell: docker-clean docker-network vendor test-ha
+test-image-shell: docker-clean docker-network vendor
+	docker run -di --network=memsql --name=online-upgrade-child \
+		-v $(PWD):/go/src/github.com/memsql/online-upgrade \
+		-w /go/src/github.com/memsql/online-upgrade \
+		memsql-online-upgrade
 	docker run -t -i --network=memsql --name=online-upgrade-master \
 		-v $(PWD):/go/src/github.com/memsql/online-upgrade \
 		-w /go/src/github.com/memsql/online-upgrade \

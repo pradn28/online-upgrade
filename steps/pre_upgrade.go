@@ -72,6 +72,8 @@ func PreUpgrade() error {
 		log.Printf("MemSQL Node %s is %s and %s", memsql.MemsqlID, memsql.State, memsql.ClusterState)
 	}
 
+	// TODO: Generate a cluster report. Add flag to disable `-no-report`
+
 	log.Printf("PreUpgrade Completed Successfully")
 
 	return nil

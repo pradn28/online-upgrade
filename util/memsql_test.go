@@ -20,10 +20,35 @@ func TestMemsqlHA(t *testing.T) {
 	t.Run("DBShowLeaves", func(t *testing.T) {
 		leaves, err := util.DBShowLeaves()
 		assert.Nil(t, err)
-		assert.Len(t, leaves, 4) // HA Cluster
+		assert.Len(t, leaves, 2) // HA Cluster
 		assert.Equal(t, "online", leaves[0].State)
 	})
 
+	t.Run("MasterSlaveCheck", func(t *testing.T) {
+		partitions, err := util.DBShowClusterStatus()
+		assert.Nil(t, err)
+		masterSlaveErr := util.MasterSlaveCheck(partitions)
+		assert.Nil(t, masterSlaveErr)
+	})
+
+	t.Run("OrphanCheck", func(t *testing.T) {
+		partitions, err := util.DBShowClusterStatus()
+		assert.Nil(t, err)
+		orphanErr := util.OrphanCheck(partitions)
+		assert.Nil(t, orphanErr)
+	})
+
+	// DBRestoreRedundancy
+	t.Run("DBRestoreRedundancy", func(t *testing.T) {
+		err := util.DBRestoreRedundancy("testing")
+		assert.Nil(t, err)
+	})
+
+	// DBRebalancePartitions
+	t.Run("DBRebalancePartitions", func(t *testing.T) {
+		err := util.DBRebalancePartitions("testing")
+		assert.Nil(t, err)
+	})
 }
 
 func TestMemsql(t *testing.T) {

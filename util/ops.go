@@ -13,7 +13,8 @@ var (
 	ErrNoMaster = errors.New("util/ops: Master Aggregator not found")
 )
 
-type agentInfo struct {
+// AgentInfo struct for memsql-ops agent-list
+type AgentInfo struct {
 	AgentID string `json:"agent_id"`
 	Host    string `json:"host"`
 	Port    int    `json:"port"`
@@ -22,7 +23,8 @@ type agentInfo struct {
 	Version string `json:"version"`
 }
 
-type memsqlInfo struct {
+// MemsqlInfo struct for memsql-ops memsql-list
+type MemsqlInfo struct {
 	MemsqlID string `json:"memsql_id"`
 
 	AgentID       string `json:"agent_id"`
@@ -30,14 +32,15 @@ type memsqlInfo struct {
 	Role          string `json:"role"`
 	Host          string `json:"host"`
 	Port          int    `json:"port"`
-
-	ClusterState string `json:"cluster_state"`
-	RunState     string `json:"run_state"`
-	State        string `json:"state"`
+	Group         int    `json:"availability_group"`
+	ClusterState  string `json:"cluster_state"`
+	RunState      string `json:"run_state"`
+	State         string `json:"state"`
 }
 
-func OpsAgentList() ([]agentInfo, error) {
-	var infos []agentInfo
+// OpsAgentList returns a slice of agent-list
+func OpsAgentList() ([]AgentInfo, error) {
+	var infos []AgentInfo
 
 	err := sh.Command(
 		"memsql-ops",
@@ -51,18 +54,20 @@ func OpsAgentList() ([]agentInfo, error) {
 	return infos, nil
 }
 
-func OpsMemsqlList() ([]memsqlInfo, error) {
-	var infos []memsqlInfo
+// OpsMemsqlList return a slice of memsql-list
+// By default we expect json. Do not pass in `-q`
+func OpsMemsqlList(args ...string) ([]MemsqlInfo, error) {
+	var infos []MemsqlInfo
 
-	err := sh.Command(
-		"memsql-ops",
-		"memsql-list",
-		"--json",
-	).UnmarshalJSON(&infos)
+	// Default Args
+	listArgs := []string{"memsql-list", "--json"}
+	// Append optional args
+	listArgs = append(listArgs, args...)
+
+	err := sh.Command("memsql-ops", listArgs).UnmarshalJSON(&infos)
 	if err != nil {
 		return nil, err
 	}
-
 	return infos, nil
 }
 
@@ -71,17 +76,15 @@ func GetNodeIDs(nodeType string) ([]string, error) {
 	var memsqlIDs []string
 
 	// Get a list of MemSQL nodes
-	nodes, err := OpsMemsqlList()
+	nodes, err := OpsMemsqlList("--memsql-role", nodeType)
 	if err != nil {
 		return nil, err
 	}
 
-	// Loop through nodes and return memsqlIDs
+	// Loop through nodes and return a slice of memsqlIDs
 	for i := range nodes {
 		node := nodes[i]
-		if node.Role == nodeType {
-			memsqlIDs = append(memsqlIDs, node.MemsqlID)
-		}
+		memsqlIDs = append(memsqlIDs, node.MemsqlID)
 	}
 	return memsqlIDs, nil
 }
@@ -104,6 +107,66 @@ func OpsMemsqlUpdateConfig(memsqlID, key, value string, option ...string) error 
 	return nil
 }
 
+// OpsNodeManagement executes memsql-ops commands which
+// take a single memsql_id as a positional argument.
+// (start, stop ...)
+func OpsNodeManagement(command, memsqlID string, arguments ...string) error {
+	c := []string{command, memsqlID}
+	c = append(c, arguments...)
+
+	log.Printf("Running memsql-ops %s", c)
+	out, err := sh.Command("memsql-ops", c).Output()
+	log.Print(string(out))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OpsMemsqlUpgrade upgrades a specified memsql node
+func OpsMemsqlUpgrade(memsqlID string, arguments ...string) error {
+	// Grab config data
+	config := ParseFlags()
+
+	u := []string{"memsql-upgrade", "--memsql-id", memsqlID}
+	u = append(u, arguments...)
+
+	if len(config.VersionHash) > 0 {
+		u = append(u, "--version-hash", config.VersionHash)
+	}
+	if config.SkipVersionCheck == true {
+		u = append(u, "--skip-version-check")
+	}
+
+	log.Printf("Running upgrade with %v", u)
+
+	out, err := sh.Command("memsql-ops", u).Output()
+	log.Print(string(out))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// OpsMemsqlGetVersion returns MemSQL Version for provided memsql_id
+func OpsMemsqlGetVersion(memsqlID string) (string, error) {
+
+	memsqls, err := OpsMemsqlList()
+	if err != nil {
+		return "", err
+	}
+	for i := range memsqls {
+		v := memsqls[i]
+		if memsqlID == v.MemsqlID {
+			version := v.MemsqlVersion
+			return version, err
+		}
+	}
+	return "", err
+}
+
+// OpsWaitMemsqlsOnlineConnected checks and waits for the state
+// of a specified number of nodes to be online and connected
 func OpsWaitMemsqlsOnlineConnected(numNodes int) error {
 	return StateChange{
 		Target:  true,

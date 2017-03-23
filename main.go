@@ -52,12 +52,75 @@ func main() {
 	}
 	fmt.Println("All Configs updated")
 
-	// Detach leaves in the first AG
-	fmt.Println("Detaching Leaves in Availability Group 1")
-	if err := steps.DetachLeaves(1); err != nil {
-		fmt.Println("Failed while detaching leaves. Please check the logs for more information.\n", err)
-		log.Fatalf("Detaching Failed: %s\n", err)
-	}
-	fmt.Println("All leaves in Availability Group 1 detached successfully")
+	// Upgrade Leaves
+	availabilityGroups := []int{1, 2}
 
+	for i := range availabilityGroups {
+		group := availabilityGroups[i]
+
+		// Detach leaves
+		fmt.Printf("Detaching Leaves in Availability Group %d\n", group)
+		if err := steps.DetachLeaves(group); err != nil {
+			fmt.Println("Failed while detaching leaves. Please check the logs for more information.\n", err)
+			log.Fatalf("Detaching Failed: %s\n", err)
+		}
+		fmt.Printf("All leaves in Availability Group %d detached successfully\n", group)
+
+		// Upgrade leaves
+		fmt.Printf("Upgrading Leaves in Availability Group %d\n", group)
+		if err := steps.UpgradeLeaves(group); err != nil {
+			fmt.Println("Failed while upgrading leaves. Please check the logs for more information.\n", err)
+			log.Fatalf("Upgrade Failed: %s\n", err)
+		}
+		fmt.Printf("All leaves in Availability Group %d have upgraded successfully\n", group)
+
+		// Attach leaves
+		fmt.Printf("Attaching Leaves in Availability Group %d\n", group)
+		if err := steps.AttachLeaves(group); err != nil {
+			fmt.Println("Failed while attaching leaves. Please check the logs for more information.\n", err)
+			log.Fatalf("Attaching Failed: %s\n", err)
+		}
+		fmt.Printf("All leaves in Availability Group %d attached successfully\n", group)
+
+		// Restore redundancy
+		fmt.Println("Restoring redundancy on user databases")
+		if err := steps.RestoreRedundancy(); err != nil {
+			fmt.Println("Failed while restoring redundancy. Please check the logs for more information.\n", err)
+			log.Fatalf("Restore Redundancy: %s\n", err)
+		}
+		fmt.Println("Redundancy restored successfully")
+	}
+
+	// Rebalance cluster
+	fmt.Println("Rebalancing user databases")
+	if err := steps.RebalancePartitions(); err != nil {
+		fmt.Println("Failed while rebalancing partitions. Please check the logs for more information.\n", err)
+		log.Fatalf("Rebalance Partitions Failed: %s\n", err)
+	}
+	fmt.Println("Rebalance partitions completed successfully")
+
+	// Upgrade aggregators
+	fmt.Println("Upgrading Child Aggregators")
+	if err := steps.UpgradeAggregators(); err != nil {
+		fmt.Println("Failed while upgrading Aggregators. Please check the logs for more information.\n", err)
+		log.Fatalf("Upgrade Failed: %s\n", err)
+	}
+	fmt.Println("All Child Aggregators have upgraded successfully")
+
+	// Upgrade Master
+	fmt.Println("Upgrading Master Aggregator")
+	if err := steps.UpgradeMaster(); err != nil {
+		fmt.Println("Failed while upgrading Master. Please check the logs for more information.\n", err)
+		log.Fatalf("Upgrade Failed: %s\n", err)
+	}
+	fmt.Println("Master Aggregator has been upgraded successfully")
+
+	// Update config post upgrade
+	fmt.Println("Updating Configs")
+	if err := steps.UpdateConfig("ON"); err != nil {
+		log.Fatalf("Update Failed: %s\n", err)
+	}
+	fmt.Println("All Configs updated")
+
+	fmt.Println("Upgrade completed successfully")
 }

@@ -154,30 +154,13 @@ func ClusterHA(t *testing.T) func() {
 		"--port", "3307",
 		"--version-hash", memsqlVersion1,
 	)
-	// Deploy second Leaf on Master
-	go MustRun(t,
-		"memsql-ops",
-		"memsql-deploy",
-		"--agent-id", masterID,
-		"--role", "leaf",
-		"--port", "3308",
-		"--version-hash", memsqlVersion1,
-	)
+
 	// Deploy third Leaf on Child
 	go MustRun(t,
 		"memsql-ops",
 		"memsql-deploy",
 		"--role", "leaf",
 		"--port", "3307",
-		"--agent-id", childID,
-		"--version-hash", memsqlVersion1,
-	)
-	// Deploy fourth Leaf on Child
-	go MustRun(t,
-		"memsql-ops",
-		"memsql-deploy",
-		"--role", "leaf",
-		"--port", "3308",
 		"--agent-id", childID,
 		"--version-hash", memsqlVersion1,
 	)

@@ -188,6 +188,24 @@ func DBAttachLeaf(host string, port int) error {
 
 }
 
+// DBRestoreRedundancy will restore redundancy on specified DB
+func DBRestoreRedundancy(database string) error {
+	_, err := dbConn.Exec(fmt.Sprintf("RESTORE REDUNDANCY on %s", database))
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+// DBRebalancePartitions will run rebalance on specified DB
+func DBRebalancePartitions(database string) error {
+	_, err := dbConn.Exec(fmt.Sprintf("REBALANCE PARTITIONS on %s", database))
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 // MasterSlaveCheck will check each partition has a Master and Slave
 // masterSlaveCheck Requires a slice if partitions from Cluster Status
 // util.ClusterStatus will return a slice of pointers to the struct

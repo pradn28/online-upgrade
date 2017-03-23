@@ -3,19 +3,23 @@ package util
 import "flag"
 
 type Config struct {
-	MasterHost string
-	MasterPort int
-	MasterUser string
-	MasterPass string
-	LogPath    string
+	MasterHost       string
+	MasterPort       int
+	MasterUser       string
+	MasterPass       string
+	LogPath          string
+	VersionHash      string
+	SkipVersionCheck bool
 }
 
 var configData = Config{
-	MasterHost: "127.0.0.1",
-	MasterPort: 3306,
-	MasterUser: "root",
-	MasterPass: "",
-	LogPath:    "online-upgrade.log",
+	MasterHost:       "127.0.0.1",
+	MasterPort:       3306,
+	MasterUser:       "root",
+	MasterPass:       "",
+	LogPath:          "online-upgrade.log",
+	VersionHash:      "",
+	SkipVersionCheck: false,
 }
 
 func init() {
@@ -38,6 +42,15 @@ func init() {
 	flag.StringVar(
 		&configData.LogPath, "log-path", configData.LogPath,
 		"Where to write out the full audit log")
+
+	flag.StringVar(
+		&configData.VersionHash, "version-hash", configData.VersionHash,
+		"Version hash for MemSQL version you want to upgrade to")
+
+	flag.BoolVar(
+		&configData.SkipVersionCheck, "skip-version-check", configData.SkipVersionCheck,
+		"Skip version check during upgrade")
+
 }
 
 func ParseFlags() Config {

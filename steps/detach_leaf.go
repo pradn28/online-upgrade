@@ -43,6 +43,7 @@ func DetachLeaves(group int) error {
 
 	// TODO: Verify Leaves are syncd
 	// InDelta - assert.InDelta(t, positionX, positionY, delta)
+	// SHOW REPLICATION STATUS
 
 	// Get a list of leaves
 	leaves, err := util.DBShowLeaves()

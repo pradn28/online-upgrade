@@ -8,7 +8,7 @@ RUN apt-get update \
         openssh-server sudo locales git ssh-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-    
+
 # Install Golang 1.7
 RUN cd /tmp \
  && wget -q https://storage.googleapis.com/golang/go1.7.5.linux-amd64.tar.gz \
