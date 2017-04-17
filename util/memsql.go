@@ -17,6 +17,7 @@ var (
 	errOrphanFound         = errors.New("detach_leaf: Orphan partition found")
 )
 
+// Leaf - struct for leaf data return from query
 type Leaf struct {
 	Host     string  `db:"Host"`
 	Port     int     `db:"Port"`
@@ -28,6 +29,7 @@ type Leaf struct {
 	State    string  `db:"State"`
 }
 
+// ClusterStatus - struct for data returned from query
 type ClusterStatus struct {
 	Host     string  `db:"Host"`
 	Port     int     `db:"Port"`
@@ -40,6 +42,7 @@ type ClusterStatus struct {
 
 var dbConn *sqlx.DB
 
+// ConnectToMemSQL does just that
 func ConnectToMemSQL(config Config) error {
 	var err error
 
@@ -85,6 +88,7 @@ func TestGetDB(t *testing.T) *sqlx.DB {
 	return dbConn
 }
 
+// DBGetVariable returns value of variable name specified
 func DBGetVariable(varName string) (string, error) {
 	var res struct {
 		Name  string `db:"Variable_name"`
@@ -94,12 +98,25 @@ func DBGetVariable(varName string) (string, error) {
 	return res.Value, err
 }
 
+// DBRowCount returns a count for specified table
+func DBRowCount(database, table string) (string, error) {
+	var res struct {
+		Count string `db:"count"`
+	}
+	err := dbConn.Get(&res, fmt.Sprintf("select count(*) as count from `%s`.`%s`", database, table))
+	if err != nil {
+		return "", err
+	}
+	return res.Count, err
+}
+
 // DBSetVariable sets database variables
 func DBSetVariable(db string) error {
 	_, err := dbConn.Exec(db)
 	return err
 }
 
+// DBGetUserDatabases returns all user databases
 func DBGetUserDatabases() ([]string, error) {
 	rows, err := dbConn.Query("SHOW DATABASES")
 	if err != nil {
@@ -121,6 +138,7 @@ func DBGetUserDatabases() ([]string, error) {
 	return dbs, nil
 }
 
+// DBSnapshotDatabase executes a snapshot of provided databse
 func DBSnapshotDatabase(db string) error {
 	_, err := dbConn.Exec(fmt.Sprintf("SNAPSHOT DATABASE `%s`", db))
 	return err
