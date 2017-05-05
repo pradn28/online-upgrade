@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/codeskyblue/go-sh"
@@ -170,7 +171,7 @@ func OpsMemsqlGetVersion(memsqlID string) (string, error) {
 func OpsWaitMemsqlsOnlineConnected(numNodes int) error {
 	return StateChange{
 		Target:  true,
-		Timeout: time.Second * 60,
+		Timeout: time.Second * 120,
 		Refresh: func() (interface{}, error) {
 			infos, err := OpsMemsqlList()
 			if err != nil {
@@ -191,4 +192,22 @@ func OpsWaitMemsqlsOnlineConnected(numNodes int) error {
 			return true, nil
 		},
 	}.WaitForState()
+}
+
+// OpsVersionCheck return Memsql Ops Version
+// memsql-ops version --client-version-only
+func OpsVersionCheck() ([]string, error) {
+	out, err := sh.Command(
+		"memsql-ops",
+		"version",
+		"--client-version-only",
+	).Output()
+
+	// Split on dot
+	version := strings.Split(string(out), ".")
+
+	if err != nil {
+		return nil, err
+	}
+	return version, nil
 }

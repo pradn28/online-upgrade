@@ -62,7 +62,7 @@ func DetachLeaves(group int) error {
 			s.FinalMSG = fmt.Sprintf(" ✓ Detach complete for %s:%d\n", l.Host, l.Port)
 			s.Start()
 
-			// Detach now!
+			// Detach leaf
 			detachErr := util.DBDetachLeaf(l.Host, l.Port)
 			if err != nil {
 				return detachErr
@@ -81,7 +81,6 @@ func DetachLeaves(group int) error {
 	s.Suffix = fmt.Sprint(" Verifing promotions")
 	s.FinalMSG = fmt.Sprintln(" ✓ All partitions promoted")
 	s.Start()
-	// TODO: Do we need to give us time for promotions to finish
 	time.Sleep(5 * time.Second)
 
 	// Get updated Show Cluster Status

@@ -6,9 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/memsql/online-upgrade/util"
+	"github.com/stretchr/testify/require"
 )
 
 // CreateDatabase will create a database with a name specified

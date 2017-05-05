@@ -15,6 +15,7 @@ func TestMemsqlHA(t *testing.T) {
 
 	require.Nil(t, util.ConnectToMemSQL(util.ParseFlags()))
 	defer testutil.CreateDatabase(t, "testing")()
+	defer testutil.CreateDatabase(t, "sharding_1a2s3d4f5g6h")()
 
 	// Requires a master aggregator
 	t.Run("DBShowLeaves", func(t *testing.T) {
@@ -49,6 +50,12 @@ func TestMemsqlHA(t *testing.T) {
 		err := util.DBRebalancePartitions("testing")
 		assert.Nil(t, err)
 	})
+
+	t.Run("DBGetUserDatabases", func(t *testing.T) {
+		dbs, err := util.DBGetUserDatabases()
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"testing"}, dbs)
+	})
 }
 
 func TestMemsql(t *testing.T) {
@@ -77,11 +84,5 @@ func TestMemsql(t *testing.T) {
 	t.Run("DBSnapshotDatabase", func(t *testing.T) {
 		err := util.DBSnapshotDatabase("testing")
 		assert.Nil(t, err)
-	})
-
-	t.Run("DBGetUserDatabases", func(t *testing.T) {
-		dbs, err := util.DBGetUserDatabases()
-		assert.Nil(t, err)
-		assert.Equal(t, []string{"testing"}, dbs)
 	})
 }

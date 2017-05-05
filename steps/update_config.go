@@ -25,7 +25,6 @@ func UpdateConfig(state string) error {
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 
 	// For each variable update config on the MASTER with the correct state
-
 	masterID, err := util.GetNodeIDs("MASTER")
 	if err != nil || len(masterID) != 1 {
 		return ErrMasterID
@@ -38,6 +37,7 @@ func UpdateConfig(state string) error {
 		s.FinalMSG = fmt.Sprintf(" ✓ [%s] %s on MASTER\n", state, variableName)
 		s.Start()
 
+		// Update configs
 		err := util.OpsMemsqlUpdateConfig(masterID[0], variableName, state, "--set-global")
 		if err != nil {
 			return err
@@ -47,7 +47,6 @@ func UpdateConfig(state string) error {
 	}
 	fmt.Println("MASTER Aggregator config updated")
 
-	// For each child AGGREGATOR update config for aggregator_failure_detection
 	// Get child aggregator IDs
 	variableName := "aggregator_failure_detection"
 	memsqlIDs, err := util.GetNodeIDs("AGGREGATOR")
@@ -55,6 +54,7 @@ func UpdateConfig(state string) error {
 		return ErrAggregatorIDs
 	}
 
+	// For each child AGGREGATOR update aggregator_failure_detection
 	for i := range memsqlIDs {
 		aggID := memsqlIDs[i]
 
@@ -64,6 +64,7 @@ func UpdateConfig(state string) error {
 		s.FinalMSG = fmt.Sprintf(" ✓ [%s] %s on AGGREGATOR [%s]\n", state, variableName, aggID[0:7])
 		s.Start()
 		// For each CA update the config
+		// TODO: store existing settings and reset to previous
 		err := util.OpsMemsqlUpdateConfig(aggID, variableName, state, "--set-global")
 		if err != nil {
 			return err

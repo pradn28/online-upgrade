@@ -3,6 +3,7 @@ package steps
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -37,9 +38,25 @@ func UpgradeAggregators() error {
 	if err != nil {
 		return err
 	}
+	// Grab config info from the command line
+	// If no config information is passed in, we will use the defaults in 'config.go'
+	config := util.ParseFlags()
+
+	divider := strings.Repeat("#", config.OutputWidth)
+
+	notification := util.LineWrapper("Please take all necessary steps to ensure your aggregators are ready to be upgraded. We will ask for confirmation prior to upgrading each aggregator. Take this time to redirect your workload, remove from load balancer, etc. Each aggregator will be unavailable while it is being upgraded. Follow the prompts to proceed.", config.OutputWidth)
+
+	fmt.Printf("%s\n", divider)
+	fmt.Println(notification)
+	fmt.Printf("%s\n", divider)
+
 	// For each Aggregator, upgrade it to the specified version or latest
 	for i := range memsqls {
 		m := memsqls[i]
+		upgradeMessage := fmt.Sprintf("We are ready to upgrade AGGREGATOR %s:%d\n", m.Host, m.Port)
+		// Get confirmation prior to upgrading each CA
+		util.GetUserConfirmation(upgradeMessage, "Type UPGRADE to continue:  ", "UPGRADE")
+
 		err := upgradeMemsql(m)
 		if err != nil {
 			return err
@@ -113,7 +130,6 @@ func upgradeMemsql(m util.MemsqlInfo) error {
 	s.Stop()
 
 	// Start MemSQL
-	// Technically not required as the upgrade starts the leaf. But just to be sure.
 	s.Suffix = fmt.Sprintf(" Starting %s (%s:%d)", m.MemsqlID[0:7], m.Host, m.Port)
 	s.FinalMSG = fmt.Sprintf(" ✓ [STARTED] %s (%s:%d)\n", m.MemsqlID[0:7], m.Host, m.Port)
 

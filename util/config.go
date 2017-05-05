@@ -2,6 +2,7 @@ package util
 
 import "flag"
 
+// Config struct for commandline flags
 type Config struct {
 	MasterHost       string
 	MasterPort       int
@@ -10,6 +11,7 @@ type Config struct {
 	LogPath          string
 	VersionHash      string
 	SkipVersionCheck bool
+	OutputWidth      int
 }
 
 var configData = Config{
@@ -20,6 +22,7 @@ var configData = Config{
 	LogPath:          "online-upgrade.log",
 	VersionHash:      "",
 	SkipVersionCheck: false,
+	OutputWidth:      80,
 }
 
 func init() {
@@ -51,8 +54,13 @@ func init() {
 		&configData.SkipVersionCheck, "skip-version-check", configData.SkipVersionCheck,
 		"Skip version check during upgrade")
 
+	flag.IntVar(
+		&configData.OutputWidth, "output-width", configData.OutputWidth,
+		"The output column width for messages. Default:80")
+
 }
 
+// ParseFlags parses command line args
 func ParseFlags() Config {
 	flag.Parse()
 	return configData

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -38,6 +39,15 @@ type ClusterStatus struct {
 	State    string  `db:"State"`
 	Position []uint8 `db:"Position"`
 	Details  string  `db:"Details"`
+}
+
+// RestoreRedundancy data return from Exlpain Restore Redundancy
+type RestoreRedundancy struct {
+	Action     string `db:"Action"`
+	Ordinal    int    `db:"Ordinal"`
+	TargetHost string `db:"Target_Host"`
+	TargetPort int    `db:"Target_Port"`
+	Phase      int    `db:"Phase"`
 }
 
 var dbConn *sqlx.DB
@@ -129,11 +139,16 @@ func DBGetUserDatabases() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Check for DR sharding db
+		drSharding, _ := regexp.MatchString("^sharding_.+$", db)
+
 		if db != "information_schema" &&
 			db != "memsql" &&
-			db != "sharding" {
+			db != "sharding" &&
+			drSharding == false {
 			dbs = append(dbs, db)
 		}
+
 	}
 	return dbs, nil
 }
@@ -213,6 +228,25 @@ func DBRestoreRedundancy(database string) error {
 		return err
 	}
 	return err
+}
+
+// DBExplainRestoreRedundancy will run explain restore redundancy on specified DB
+func DBExplainRestoreRedundancy(database string) ([]*RestoreRedundancy, error) {
+
+	actions := []*RestoreRedundancy{}
+	rows, err := dbConn.Queryx(fmt.Sprintf("EXPLAIN RESTORE REDUNDANCY on %s", database))
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		a := new(RestoreRedundancy)
+		err := rows.StructScan(&a)
+		if err != nil {
+			return nil, err
+		}
+		actions = append(actions, a)
+	}
+	return actions, err
 }
 
 // DBRebalancePartitions will run rebalance on specified DB

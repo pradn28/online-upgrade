@@ -1,6 +1,14 @@
-# Online Upgrade 
+# MemSQL Online Upgrade 
 
-Online Upgrade is a Go project for upgrading MemSQL from 5.x -> 5.x
+MemSQL Online Upgrade is a Go project for upgrading MemSQL from 5.x -> 5.x
+
+## Overview
+
+memsql-online-upgrade will execute various steps to upgrade your cluster without downtime. While the first step will verify your cluster is healthy, it is recommended that you double check your cluster is in a healthy state prior to starting the upgrade. It is also recommended you backup your cluster prior to the upgrade.
+
+## Requirements 
+
+MemSQL must be running in High Availability mode and running MemSQL Ops 5.7 or higher
 
 ## Usage
 
@@ -13,10 +21,6 @@ $ ./memsql-online-upgrade
 
 Need a specific version? You can use the flag `-version-hash` followed by the version hash you want to upgrade to. The default is to upgrade to the latest version. 
 
-## Overview
-
-memsql-online-upgrade will execute various steps to upgrade you cluster without downtime. While the first step will verify you cluster is healthy, it is recommended that you double check your cluster is in a healthy status prior to starting the upgrade. 
-
 #### Logging
 Upon execution of the script, memsql-online-upgrade will create a log file in the current working directory. It will either create or append to the default log file ("online-upgrade.log") unless a file location is specified with `-log-path`.
 
@@ -24,7 +28,8 @@ Upon execution of the script, memsql-online-upgrade will create a log file in th
 Health check will preform the following steps to ensure your cluster is ready and willing to be upgraded.
 - Redundancy level check. Redundancy level must be 2 (HA)
 - Agents Online. Check that all agents are in an ONLINE state.
-- Node Check. Verify all MemSQL node are ONLINE and CONNECTED
+- Node check. Verify all MemSQL node are ONLINE and CONNECTED
+- Ops check. Verify MemSQL Ops is running and version is >= 5.7
 
 If any of these steps fail, memsql-online-upgrade will exit.
 
@@ -32,23 +37,21 @@ If any of these steps fail, memsql-online-upgrade will exit.
 Snapshots will be taken for all user databases. If any of these Snapshots fail, memsql-online-upgrade will exit. You can find additional information in the log file.
 
 #### Update Config
-As part of the upgrade process, we must set some variables. We will set them "off" prior to the upgrade and back "on" again after the upgrade is complete.
+As part of the upgrade process, we must set some variables. We will set them "OFF" prior to the upgrade and back to "ON" after the upgrade is complete. If you require these variables to be set to "off" after the upgrade, you will need to do it manually.
 
 - auto_attach, aggregator_failure_detection, leaf_failure_detection
 
 #### Detach Leaves
-Now we can start the process to detach the leaves in the first AG.
+Now we can start the process to detach the leaves in the first AG (Availability Group).
 
-But, before we do, we need to check a few more things.
+Before we do, we need to check a few more things.
 * Orphan Check - This will ensure there are not any orphan partitions in the cluster.
 * Master/Slave Check - Ensure that all masters and slaves are present.
 
 If all checks pass, we will detach the leaves in the first AG.
-
 All error and success messages are passed to stdout and the log file. 
 
 #### Upgrade Nodes
-
 The upgrade step will, stop each leaf, upgrade it and start the leaf back up again. 
 Online upgrade will leverage `memsql-ops memsql-upgrade` for each leaf. One at a time.
 You can observe additional information by tailing the log file. You can also `watch -n 3 memsql-ops memsql-list` from a separate session on the master. 
@@ -86,7 +89,7 @@ You'll know at this point if docker is ready. So why do you need Docker. Testing
 
 When you run `make test` or other options, which we'll discussed later in Testing, we spin up a docker container and run all the tests in the project.
 
-Now, it is advised that you first run `make test-image-shell`. This will do a few different things. It will, first and foremost, read the Dockerfile in this project. The Dockerfile will setup the required Docker container for testing. See the Dockerfile for more details. Once all the require files are downloaded and the container is ready, we will start two containers with the image we just created and link them together. The first container will run in the background and the second one will drop you in a Bash shell. At this point you can manually runs some tests or just exit. The `test-image-shell` is usefully for testing a single test. 
+Now, it is advised that you first run `make test-image-shell`. This will do a few different things. It will, first and foremost, read the Dockerfile in this project. The Dockerfile will setup the required Docker container for testing. See the Dockerfile for more details. Once all the require files are downloaded and the container is ready, we will start two containers with the image we just created and link them together. The first container will run in the background and the second one will drop you in a Bash shell. At this point you can manually runs some tests or just exit. The `test-image-shell` is useful for testing a single test. 
 
 After that is complete, you should be ready to write some code and of course test it.
 
@@ -95,14 +98,14 @@ Understanding the codebase.
 There are currently three main directories to focus on:
 
 * ./steps - contains all the individual upgrade steps and their supporting tests 
-* ./testuitl - contains function related directly with testing
-* ./util - contains functions that support each step
+* ./testuitl - contains functions related directly with testing
+* ./util - contains functions that support the steps
 
 As an example `./steps/pre_upgrade.go` will run several functions to verify the cluster is ready to be upgraded. Within the pre_upgrade step, `func PreUpgrade()` we call to the util package for `util.OpsAgentList()` which will return a slice of AgentInfo ([]AgentInfo).
 
 Each of the steps and utils have a test to either test the function or the entire step which includes several other functions. 
 
-Next thing to understand is some of the necessary file to run and build memsql-online-upgrade.
+Next thing to understand is some of the necessary files to run and build memsql-online-upgrade.
 
 * Dockerfile - required to build the docker container for testing.
 * Makefile - required to setup and execute testing.
@@ -113,32 +116,30 @@ This rest of the file you should already be familiar with.
 
 ##### Step 4:
 
-Build and test your new function or step. This will not be explained in this README. See testing section below on testing. 
-
-  
+Build and test your new function or step. This will not be explained in this README.
 
 #### Testing
-There are several ways to get stated with testing. Lets start with running `make` from within the memsql-online-upgrade repo directory (go-workspace/src/github.com/memsql/online-upgrade/).
+There are several ways to get stated with testing. Lets start with running `make test-image-shell` from within the memsql-online-upgrade repo directory (go-workspace/src/github.com/memsql/online-upgrade/).
 
 ```
-[online-upgrade]$ make
+[online-upgrade]$ make test-image-shell
 ```
 Note that running `make` will download and install everything required for testing and will start testing all available tests. All test files should have the format `*_test.go`.
 
-On subsequent tests you can either run `make test`, `make test-one` or `make test-image-shell`. These are all explained below.
+On subsequent tests you can either run `make test` or `make test-image-shell`. These are all explained below.
 
 By default make and make test will find all available tests by utilizing the output `glide nv`. The `glide nv` command, an alias for `glide novendor`, will be passed into go test `go test $(glide nv)` and will run over all directories of the project except the vendor directory.
 
-When you only want to run a single test, we can run `make test-one`, which excepts a package folder or a specific test. See the examples below.
+When you only want to run a single test, we can run `make test` and specify the test argument, which excepts a package folder or a specific test. See the examples below.
 
 Testing a package (e.g. steps)
 ```
-make test-one test=./steps/...
+make test test=./steps/...
 ```
 
 And a single test
 ```
-make test-one test=./steps/detach_leaf_test.go
+make test test=./steps/detach_leaf_test.go
 ```
 
 Want to test manually? Sure. You can do that too. You can simply run `go test <test>` from within the test shell. Start the test shell and run your test. The `test-image-shell` will spin up both master and child containers and drop you at a shell prompt. From here you can simply run your test. See the example below.

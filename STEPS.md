@@ -1,10 +1,13 @@
 # Online Upgrade steps from 5.x -> 5.x
 
+Note: User is prompted between major steps to continue.
+
 <!-- pre-upgrade -->
 pre-upgrade checks
- -> is HA setup
- -> ops is happy + healthy
- -> all nodes are online
+ -> Check redundancy level
+ -> ops version check
+ -> all agents and nodes are online and connected
+ -> check that the cluster is balanced
 
 <!-- snapshot databases -->
 snapshot all user databases
@@ -13,9 +16,11 @@ snapshot all user databases
     -> SNAPSHOT $database
 
 <!-- update config -->
-disable auto_attach, aggregator_failure_detection and leaf_failure_detection on master
+store existing settings
+set auto_attach, aggregator_failure_detection and leaf_failure_detection on master to OFF
  -> memsql-ops memsql-update-config...
 
+store existing settings
 disable aggregator_failure_detection on each agg
  -> memsql-ops memsql-update-config
 
@@ -29,11 +34,11 @@ detach AG 1 leaf nodes once the AG 2 slaves are caught up
     check sync replication?
 
 <!-- memsql upgrade -->
-memsql-ops memsql-stop <master id>
+memsql-ops memsql-stop <memsql-id>
 
 memsql-ops memsql-upgrade --skip-snapshot [ --memsql-id id ]...
 
-memsql-ops memsql-start <master id>
+memsql-ops memsql-start <memsql-id>
 
 <!-- attach leaves -->
 attach AG 1 leaf nodes (no rebalance)
@@ -52,11 +57,11 @@ detach AG 2 leaf nodes (once partitions are caught up)
  -> from master
 
 <!-- memsql upgrade -->
-memsql-ops memsql-stop <master id>
+memsql-ops memsql-stop <memsql-id>
 
 memsql-ops memsql-upgrade --skip-snapshot <memsql ids for leaves in availability group B>
 
-memsql-ops memsql-start <master id>
+memsql-ops memsql-start <memsql-id>
 
 attach AG 2 leaf nodes (no rebalance)
  -> connect to master
@@ -74,6 +79,8 @@ rebalance partitions on user databases (once they are caught up)
  -> from master
 
 <!-- upgrade aggregators -->
+We will prompt the user before each aggregator upgrade. We will also give them some explanation of what is going to happen.
+
 for each child agg (or set of child aggs):
     memsql-ops memsql-upgrade --skip-snapshot --memsql-id <child agg ids>
 
