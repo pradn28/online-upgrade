@@ -1,79 +1,97 @@
 # MemSQL Online Upgrade 
 
-MemSQL Online Upgrade is a Go project for upgrading MemSQL from 5.x -> 5.x
+MemSQL Online Upgrade is a Go project for upgrading MemSQL from 5.x to a newer 5.x version.
 
 ## Overview
 
-memsql-online-upgrade will execute various steps to upgrade your cluster without downtime. While the first step will verify your cluster is healthy, it is recommended that you double check your cluster is in a healthy state prior to starting the upgrade. It is also recommended you backup your cluster prior to the upgrade.
+`memsql-online-upgrade` will execute various steps to upgrade your cluster without downtime. While the first step will verify your cluster is healthy, it is recommended that you double check your cluster is in a healthy state prior to starting the upgrade. It is also recommended you backup your cluster prior to the upgrade.
 
 ## Requirements 
 
-MemSQL must be running in High Availability mode and running MemSQL Ops 5.7 or higher
+MemSQL must be running in High Availability mode and running MemSQL Ops 5.7 or higher.
 
 ## Usage
 
-memsql-online-upgrade should be run from the master aggregator on the cluster that you intend to upgrade. 
+Run `memsql-online-upgrade` from the master aggregator on the cluster that you intend to upgrade. 
 
 ```
 $ ./memsql-online-upgrade
 ```
-`memsql-online-upgrade` will use the default host ("127.0.0.1"), username ("root") and port (3306), if not specified on the command line. For a full list of available options, you can add the `-h` flag to `memsql-online-upgrade`.
 
-Need a specific version? You can use the flag `-version-hash` followed by the version hash you want to upgrade to. The default is to upgrade to the latest version. 
+You can optionally specify a host, username, and port when executing `memsql-online-upgrade`. If you don't specify these paramters, the following default values will be used:
+
+* Host: `127.0.0.1`
+* Username: `root`
+* Port: `3306`
+
+For a full list of available options, use the `-h` flag when executing `memsql-online-upgrade`.
+
+If you want to upgrade to a specific build version, you can use the flag `-version-hash` followed by the desired version hash. By default, `memsql-online-upgrade` will use the latest released 5.x version.
 
 #### Logging
-Upon execution of the script, memsql-online-upgrade will create a log file in the current working directory. It will either create or append to the default log file ("online-upgrade.log") unless a file location is specified with `-log-path`.
+
+When `memsql-online-upgrade` is executed, a log file is created in the current working directory. It will either create or append to the default log file (**online-upgrade.log**) unless a file location is specified with `-log-path`.
 
 #### Health Check
-Health check will preform the following steps to ensure your cluster is ready and willing to be upgraded.
-- Redundancy level check. Redundancy level must be 2 (HA)
-- Agents Online. Check that all agents are in an ONLINE state.
-- Node check. Verify all MemSQL node are ONLINE and CONNECTED
-- Ops check. Verify MemSQL Ops is running and version is >= 5.7
 
-If any of these steps fail, memsql-online-upgrade will exit.
+Health check will preform the following steps to ensure your cluster is ready and willing to be upgraded:
+
+* **Redundancy level check**: The redundancy level must be 2 for High Availability.
+* **Agents online**: All agents must be in an `ONLINE` state.
+* **Node check**: All MemSQL nodes must be `ONLINE` and `CONNECTED`.
+* **Ops check**: MemSQL Ops must be running, and be version 5.7 or newer.
+
+If any of these steps fail, `memsql-online-upgrade` will exit.
 
 #### Snapshots
-Snapshots will be taken for all user databases. If any of these Snapshots fail, memsql-online-upgrade will exit. You can find additional information in the log file.
+
+Snapshots will be taken for all user databases. If any of these Snapshots fail, `memsql-online-upgrade` will exit. You can find additional information in the log file.
 
 #### Update Config
-As part of the upgrade process, we must set some variables. We will set them "OFF" prior to the upgrade and back to "ON" after the upgrade is complete. If you require these variables to be set to "off" after the upgrade, you will need to do it manually.
 
-- auto_attach, aggregator_failure_detection, leaf_failure_detection
+As part of the upgrade process, some system variables will be modified. Some variables will be set to `OFF` prior to the upgrade, and then back to `ON` after the upgrade is complete. If you require these variables to be set to `OFF` after the upgrade, you will need change them manually. The affected variables are listed below:
+
+* `auto_attach`
+* `aggregator_failure_detection`
+* `leaf_failure_detection`
 
 #### Detach Leaves
-Now we can start the process to detach the leaves in the first AG (Availability Group).
 
-Before we do, we need to check a few more things.
-* Orphan Check - This will ensure there are not any orphan partitions in the cluster.
-* Master/Slave Check - Ensure that all masters and slaves are present.
+Each leaf in the cluster's first Availability Group (AG) will be detached. Before this operation starts, a few more checks are performed:
 
-If all checks pass, we will detach the leaves in the first AG.
-All error and success messages are passed to stdout and the log file. 
+* **Orphan Check**: Ensures there are no orphan partitions in the cluster.
+* **Master/Slave Check**: Ensures that all masters and slaves are present.
+
+If all checks pass, we will detach the leaves in the first AG. All error and success messages are passed to `stdout` and the log file. 
 
 #### Upgrade Nodes
-The upgrade step will, stop each leaf, upgrade it and start the leaf back up again. 
-Online upgrade will leverage `memsql-ops memsql-upgrade` for each leaf. One at a time.
-You can observe additional information by tailing the log file. You can also `watch -n 3 memsql-ops memsql-list` from a separate session on the master. 
+
+The upgrade step stops each leaf, upgrades it, and then starts the leaf again. `memsql-online-upgrade` leverages the MemSQL Ops command `memsql-ops memsql-upgrade` and executes it on each leaf, one at a time.
+
+You can observe additional information by tailing the log file. Additionally, you can also execute `watch -n 3 memsql-ops memsql-list` from a separate session on the master. 
 
 If at any time the upgrade fails, the current leaf being upgraded will rollback to the previous version and halt the upgrade. At this point you would need to continue the upgrade manually. Check the output of `show leaves`, `show cluster status`, and `memsql-ops memsql-list` to verify the state of the cluster. 
 
-After all the leaves in each availability group are complete, we will restore redundancy to all user databases before continuing. 
+After all the leaves in each Availability Group are complete, redundancy is restored to all user databases before continuing. 
 
 #### Rebalance
-Upon completion of the upgrade, we will rebalance all users databases.
+
+Upon completion of the upgrade, all users databases are rebalanced.
 
 #### Upgrade Aggregators
-After all the leaves are successfully upgraded, we will upgrade each of the child aggregators one at a time followed by the master aggregator. 
+
+After all the leaves are successfully upgraded, each of the child aggregators are upgraded one at a time. Once all of the child aggregators have been upgraded, the master aggregator is upgraded.
 
 #### Update Configs
+
 The last steps of the process is to reset the variables we updated at the beginning of the upgrade. 
 
 ## Development
 
-Developing is easy. There are just a few things we need to know. First, you should know `Go`. We also leverage Docker to test, so you should have Docker setup and available. That setup is outside the scope of this README.  
+Developing is easy, and there are just a few things to consider. First, it's important to understand the `Go` language. `memsql-online-upgrade` is tested using Docker, so we recommend that you have Docker set up and available. Setting up and configuring Docker is outside the scope of this README.  
 
 ###### Step 1:
+
 Get the code. If you are reading this, you must already have it or you are viewing the repo.
 
 ```
@@ -81,99 +99,111 @@ git clone git@github.com:memsql/online-upgrade.git
 ```
 
 ##### Step 2:
-Ensure Docker is setup and ready.
+
+Ensure Docker is set up and ready by executing the following command:
+
 ```
 docker ps
 ```
-You'll know at this point if docker is ready. So why do you need Docker. Testing.
 
-When you run `make test` or other options, which we'll discussed later in Testing, we spin up a docker container and run all the tests in the project.
+If this command is successful, then Docker is ready. Docker is required for testing purposes.
 
-Now, it is advised that you first run `make test-image-shell`. This will do a few different things. It will, first and foremost, read the Dockerfile in this project. The Dockerfile will setup the required Docker container for testing. See the Dockerfile for more details. Once all the require files are downloaded and the container is ready, we will start two containers with the image we just created and link them together. The first container will run in the background and the second one will drop you in a Bash shell. At this point you can manually runs some tests or just exit. The `test-image-shell` is useful for testing a single test. 
+When you run `make test` or other options, a Docker container is created, and all tests in the project are executed in the container.
 
-After that is complete, you should be ready to write some code and of course test it.
+We recommend that you first run `make test-image-shell`. This command does a few things. First, it reads the Dockerfile in this project. The Dockerfile will set up the required Docker container for testing. See the Dockerfile for more details. Once all the required files are downloaded and the container is ready, two containers will be started using the image that was just created, and then they will be linked together. The first container will run in the background and the second container will drop you in a Bash shell. At this point, you can manually run some tests or just exit. The `test-image-shell` is useful for testing a single test. 
+
+After these steps are complete, you should be ready to write some code and then test it.
 
 #### Step 3:
-Understanding the codebase.
-There are currently three main directories to focus on:
 
-* ./steps - contains all the individual upgrade steps and their supporting tests 
-* ./testuitl - contains functions related directly with testing
-* ./util - contains functions that support the steps
+It's important to understand the codebase. There are three main directories to focus on:
 
-As an example `./steps/pre_upgrade.go` will run several functions to verify the cluster is ready to be upgraded. Within the pre_upgrade step, `func PreUpgrade()` we call to the util package for `util.OpsAgentList()` which will return a slice of AgentInfo ([]AgentInfo).
+* `./steps`: Contains all the individual upgrade steps and their supporting tests. 
+* `./testutil`: Contains functions related directly with testing.
+* `./util`: Contains functions that support the steps.
 
-Each of the steps and utils have a test to either test the function or the entire step which includes several other functions. 
+For example, `./steps/pre_upgrade.go` will run several functions to verify the cluster is ready to be upgraded. Within the `pre_upgrade.go` file, the `func PreUpgrade()` function calls the util package for `util.OpsAgentList()` and returns a slice of AgentInfo (`[]AgentInfo`).
 
-Next thing to understand is some of the necessary files to run and build memsql-online-upgrade.
+Each file in the `steps` and `util` directory have corresponding tests that either test a single function or an entire step, which encompasses more than one function.
 
-* Dockerfile - required to build the docker container for testing.
-* Makefile - required to setup and execute testing.
-* main.go - is the main file the calls all the steps in order. Which is also the file we use to build. 
-* glide.yaml and .lock - are used for go package management. 
+Next, there are important files that are used to run and build `memsql-online-upgrade`:
 
-This rest of the file you should already be familiar with. 
+* `Dockerfile`: Required to build the Docker container for testing.
+* `Makefile`: Required to set up and execute testing.
+* `main.go`: The main file the calls all the steps in their proper order. This file is also used to for build purposes.
+* `glide.yaml` and `.lock`: These files are used for Go package management.  
 
 ##### Step 4:
 
-Build and test your new function or step. This will not be explained in this README.
+Build and test your new function or step. This process is out of scope for this README.
 
 #### Testing
-There are several ways to get stated with testing. Lets start with running `make test-image-shell` from within the memsql-online-upgrade repo directory (go-workspace/src/github.com/memsql/online-upgrade/).
+
+There are several ways to get stated with testing. First, start by running `make test-image-shell` from within the `memsql-online-upgrade` repo directory (`go-workspace/src/github.com/memsql/online-upgrade/`).
 
 ```
 [online-upgrade]$ make test-image-shell
 ```
-Note that running `make` will download and install everything required for testing and will start testing all available tests. All test files should have the format `*_test.go`.
 
-On subsequent tests you can either run `make test` or `make test-image-shell`. These are all explained below.
+Note that running `make` will download and install everything required for testing and will start executing all available tests. All test files should have the format `*_test.go`.
 
-By default make and make test will find all available tests by utilizing the output `glide nv`. The `glide nv` command, an alias for `glide novendor`, will be passed into go test `go test $(glide nv)` and will run over all directories of the project except the vendor directory.
+On subsequent tests you can either run `make test` or `make test-image-shell`. These files are explained below.
 
-When you only want to run a single test, we can run `make test` and specify the test argument, which excepts a package folder or a specific test. See the examples below.
+By default, `make` and `make test` will find all available tests by utilizing the output `glide nv`. The `glide nv` command, an alias for `glide novendor`, will be passed into go test `go test $(glide nv)` and will run over all directories of the project except the vendor directory.
 
-Testing a package (e.g. steps)
+If you only want to run a single test, you can run `make test` and specify the test argument, which expects a package folder or a specific test. See the examples below.
+
+**Testing a package (e.g. `steps`)**:
 ```
 make test test=./steps/...
 ```
 
-And a single test
+**Executing a single test:**
 ```
 make test test=./steps/detach_leaf_test.go
 ```
 
-Want to test manually? Sure. You can do that too. You can simply run `go test <test>` from within the test shell. Start the test shell and run your test. The `test-image-shell` will spin up both master and child containers and drop you at a shell prompt. From here you can simply run your test. See the example below.
+If you want to execute a specific test manually, simply run `go test <test>` from within the test shell. Start the test shell and run your desired test. The `test-image-shell` will spin up both master and child containers and drop you at a shell prompt. From the shell prompt, you can simply run your test.
+
+Start by executing the command below:
 
 ```
 make test-image-shell
 ```
-Now you should see a prompt like this.
+
+Now you should see a prompt like this:
+
 ```
 root@online-upgrade-master:/go/src/github.com/memsql/online-upgrade#
 ```
-Let go ahead and run a test. Note `-p 1` is required for running multiple tests at the same time due to `go test` invoking parallelization by default.
+
+Now, execute a test. Note `-p 1` is required for running multiple tests at the same time due to `go test` invoking parallelization by default.
+
 ```
 go test ./steps/pre_upgrade_test.go
 ```
 ```
 go test -p 1 ./steps/... ./util/...
 ```
+
 The test will run and either produce and error or a pass message like below.
+
 ```
 ok  	command-line-arguments	59.890s
 ```
-You can also pass in a `-v` to see whats going on during the test.
 
-For more information about testing, you can also take a peak at the Makefile. As was previously mentioned, we are spinning up an HA cluster during testing and there are several steps required to make this happen. 
+You can also pass in a `-v` to see activity during the test.
+
+For more information about testing, you can also read the Makefile. As previously mentioned, a High Availability cluster is started during testing, which requires several steps to create. 
 
 
 ## Deployment
-Quick and dirty.
+
+To deploy quickly, execute the following command:
+
 ```
 go build -o memsql-online-upgrade main.go
 
 ```
-This will produce a executable binary. Make sure you do this in Linux.
 
-Ship it!
-
+This command produces an executable binary. Make sure you only execute this command in Linux.
