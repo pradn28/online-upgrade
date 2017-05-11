@@ -88,7 +88,7 @@ The last steps of the process is to reset the variables we updated at the beginn
 
 ## Development
 
-Developing is easy, and there are just a few things to consider. First, it's important to understand the `Go` language. `memsql-online-upgrade` is tested using Docker, so we recommend that you have Docker set up and available. Setting up and configuring Docker is outside the scope of this README.  
+Developing is easy, and there are just a few things to consider. First, it's important to understand the `Go` language. `memsql-online-upgrade` is tested using Docker, so we recommend that you have Docker set up and available. Setting up and configuring Docker is outside the scope of this README. You must also provide an enterprise license key in the Dockerfile for testing. 
 
 ###### Step 1:
 
