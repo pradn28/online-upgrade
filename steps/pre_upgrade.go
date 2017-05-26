@@ -14,6 +14,7 @@ import (
 // TODO: Check for unmonitored nodes
 // TODO: Generate a cluster report. Add flag to disable `-no-report`
 // TODO: Test for DR cluster.
+// TODO: Print completed checks to STDOUT
 
 // Set Custom error messages
 var (

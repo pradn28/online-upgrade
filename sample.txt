@@ -1,0 +1,110 @@
++------------------------------------------------------------------------------+
+memsql-online-upgrade will execute various steps to upgrade your cluster. While
+there are steps to check your cluster is healthy, it is recommended that you
+backup and double check your cluster is in a healthy status prior to starting
+the upgrade.
++------------------------------------------------------------------------------+
+Type START to begin the upgrade: START
+Connected to MemSQL
+Running Health Check
+ ✓ Health Check complete
+All Health Checks Completed
++------------------------------------------------------------------------------+
+Your cluster appears to be healthy. In the next step we will snapshot all user
+databases and update configs.
++------------------------------------------------------------------------------+
+Type GO to continue: GO
+Taking Snapshots
+All Snapshots Completed
+Updating Configs
+ ✓ [OFF] auto_attach on MASTER
+ ✓ [OFF] aggregator_failure_detection on MASTER
+ ✓ [OFF] leaf_failure_detection on MASTER
+MASTER Aggregator config updated
+ ✓ [OFF] aggregator_failure_detection on AGGREGATOR [29FC896]
+CHILD AGGREGATOR configs updated
+All Configs updated
++------------------------------------------------------------------------------+
+The next step is to upgrade the leaves. We will start with the first
+availability group and wait for confirmation before continuing to the next
++------------------------------------------------------------------------------+
+Type UPGRADE to continue: UPGRADE
+Detaching Leaves in Availability Group 1
+ ✓ Detach complete for 10.0.3.26:3307
+ ✓ All partitions promoted
+All leaves in Availability Group 1 detached successfully
+Upgrading Leaves in Availability Group 1
+ ✓ [STOPPED] 52D804A (10.0.3.26:3307)
+ ✓ [UPGRADED] 52D804A now running version: 5.8.2
+ ✓ [STARTED] 52D804A (10.0.3.26:3307)
+All leaves in Availability Group 1 have upgraded successfully
+Attaching Leaves in Availability Group 1
+ ✓ Attach complete for 10.0.3.26:3307
+ ✓ All 2 leaves are now online
+All leaves in Availability Group 1 attached successfully
+Restoring redundancy on user databases
+Redundancy restored successfully
++------------------------------------------------------------------------------+
+All leaves in Availability Group 1 are upgraded. Ready to upgrade leaves in
+Availability Group 2?
++------------------------------------------------------------------------------+
+Type NEXT to continue: NEXT
+Detaching Leaves in Availability Group 2
+ ✓ Detach complete for 10.0.2.110:3307
+ ✓ All partitions promoted
+All leaves in Availability Group 2 detached successfully
+Upgrading Leaves in Availability Group 2
+ ✓ [STOPPED] 641E0B6 (10.0.2.110:3307)
+ ✓ [UPGRADED] 641E0B6 now running version: 5.8.2
+ ✓ [STARTED] 641E0B6 (10.0.2.110:3307)
+All leaves in Availability Group 2 have upgraded successfully
+Attaching Leaves in Availability Group 2
+ ✓ Attach complete for 10.0.2.110:3307
+ ✓ All 2 leaves are now online
+All leaves in Availability Group 2 attached successfully
+Restoring redundancy on user databases
+Redundancy restored successfully
++------------------------------------------------------------------------------+
+Next we will rebalance the cluster
++------------------------------------------------------------------------------+
+Type REBALANCE to continue: REBALANCE
+Rebalancing user databases
+Rebalance partitions completed successfully
+
+Upgrading Child Aggregators
+################################################################################
+Please take all necessary steps to ensure your aggregators are ready to be
+upgraded. We will ask for confirmation prior to upgrading each aggregator. Take
+this time to redirect your workload, remove from load balancer, etc. Each
+aggregator will be unavailable while it is being upgraded. Follow the prompts
+to proceed.
+
+################################################################################
++------------------------------------------------------------------------------+
+We are ready to upgrade AGGREGATOR 10.0.2.110:3306
++------------------------------------------------------------------------------+
+Type UPGRADE to continue:  UPGRADE
+ ✓ [STOPPED] 29FC896 (10.0.2.110:3306)
+ ✓ [UPGRADED] 29FC896 now running version: 5.8.2
+ ✓ [STARTED] 29FC896 (10.0.2.110:3306)
+All Child Aggregators have upgraded successfully
+Upgrading Master Aggregator
++------------------------------------------------------------------------------+
+We are ready to upgrade the Master Aggregator. After the Master Aggregator is
+upgraded, we will re-set the configuration variables modified at the start of
+the upgrade.
++------------------------------------------------------------------------------+
+Type MASTER to continue: MASTER
+ ✓ [STOPPED] B8BBC17 (10.0.3.26:3306)
+ ✓ [UPGRADED] B8BBC17 now running version: 5.8.2
+ ✓ [STARTED] B8BBC17 (10.0.3.26:3306)
+Master Aggregator has been upgraded successfully
+Updating Configs
+ ✓ [ON] auto_attach on MASTER
+ ✓ [ON] aggregator_failure_detection on MASTER
+ ✓ [ON] leaf_failure_detection on MASTER
+MASTER Aggregator config updated
+ ✓ [ON] aggregator_failure_detection on AGGREGATOR [29FC896]
+CHILD AGGREGATOR configs updated
+All Configs updated
+Upgrade completed successfully

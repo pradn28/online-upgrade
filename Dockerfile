@@ -51,7 +51,7 @@ RUN cd /tmp \
  && wget -q http://download.memsql.com/memsql-ops-$OPS_VERSION/memsql-ops-$OPS_VERSION.tar.gz \
  && tar -xzf memsql-ops-$OPS_VERSION.tar.gz \
  && ./memsql-ops-$OPS_VERSION/install.sh \
-    --no-cluster --no-start --management-user memsql-user \
+    --ignore-min-requirements --no-cluster --no-start --management-user memsql-user \
  && rm -rf /tmp/*
 
 # The following blob does the following:

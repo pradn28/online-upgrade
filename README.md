@@ -88,7 +88,9 @@ The last steps of the process is to reset the variables we updated at the beginn
 
 ## Development
 
-Developing is easy, and there are just a few things to consider. First, it's important to understand the `Go` language. `memsql-online-upgrade` is tested using Docker, so we recommend that you have Docker set up and available. Setting up and configuring Docker is outside the scope of this README. You must also provide an enterprise license key in the Dockerfile for testing. 
+Developing is easy, and there are just a few things to consider. First, it's important to understand the `Go` language. If you are new to `Go` and need help getting started, it is recommended to review the `Go` documentation (https://golang.org/doc/). Also, below is a simple how-to on setting up your `Go` environment.
+
+`memsql-online-upgrade` is tested using Docker, so we recommend that you have Docker set up and available. Setting up and configuring Docker is outside the scope of this README. You must also provide an enterprise license key in the Dockerfile for testing.
 
 ###### Step 1:
 
@@ -133,7 +135,7 @@ Next, there are important files that are used to run and build `memsql-online-up
 * `main.go`: The main file the calls all the steps in their proper order. This file is also used to for build purposes.
 * `glide.yaml` and `.lock`: These files are used for Go package management.  
 
-##### Step 4:
+#### Step 4:
 
 Build and test your new function or step. This process is out of scope for this README.
 
@@ -207,3 +209,65 @@ go build -o memsql-online-upgrade main.go
 ```
 
 This command produces an executable binary. Make sure you only execute this command in Linux.
+
+If you are developing on another MacOS, you can build for linux using the following command.
+```
+env GOOS=linux GOARCH=amd64 go build -o memsql-online-upgrade main.go
+```
+
+## How-To setup Go
+
+Here is a link (https://golang.org/doc/install) to the official documentation on "Getting Started" with Go.
+
+Download GO (https://golang.org/dl/). Choose the archive file appropriate for your installation. For instance, if you are installing Go version 1.8.3 for 64-bit x86 on Linux, the archive you want is called go1.8.3.linux-amd64.tar.gz. For example:
+```
+sudo curl -O https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
+```
+Next, you will need to extract it. The following example will create a `go` directory in /usr/local.
+```
+sudo tar -C /usr/local -xzf go1.8.3.linux-amd64.tar.gz
+```
+
+Setup your environment variables (`GOPATH` and `GOROOT`). For example you can add this in your `.profile`.
+
+`GOPATH` is the location of your `Go` projects and `GOROOT` is the location of `go`
+```
+export GOPATH=$HOME/go-workspace
+export GOROOT=/usr/local/go
+# Add bin directories to your PATH
+export PATH=$PATH:$GOPATH/bin
+export PATH=$PATH:$GOROOT/bin
+```
+After updating your `.profile`, you will need to reload it.
+```
+source ~/.profile
+```
+
+Create your go-workspace directory
+```
+mkdir $HOME/go-workspace
+```
+
+Now we can `go get` the repository. This will get the repository and create a few directories inside your `GOPATH`
+```
+go get github.com/memsql/online-upgrade
+```
+
+Change directories into `online-upgrade`
+```
+cd $GOPATH/src/github.com/memsql/online-upgrade
+```
+At this point we can `go build`.
+```
+go build -o memsql-online-upgrade main.go
+```
+If you installed on MacOS, you will need to build for linux
+```
+env GOOS=linux GOARCH=amd64 go build -o memsql-online-upgrade main.go
+```
+
+You will now have a file named `memsql-online-upgrade` in your current working directory. You now need move it onto the Master Aggregator and run it. See the Usage section for more details. 
+
+```
+./memsql-online-upgrade
+```

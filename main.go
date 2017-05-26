@@ -23,6 +23,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Failed to setup logging: %s", err))
 	}
+	// TODO: Print message to STDOUT that log file was created and is named x
 
 	util.GetUserConfirmation("memsql-online-upgrade will execute various steps to upgrade your cluster. While there are steps to check your cluster is healthy, it is recommended that you backup and double check your cluster is in a healthy status prior to starting the upgrade.", "Type START to begin the upgrade: ", "START")
 
