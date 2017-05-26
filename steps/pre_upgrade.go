@@ -14,7 +14,6 @@ import (
 // TODO: Check for unmonitored nodes
 // TODO: Generate a cluster report. Add flag to disable `-no-report`
 // TODO: Test for DR cluster.
-// TODO: Print completed checks to STDOUT
 
 // Set Custom error messages
 var (
@@ -23,38 +22,46 @@ var (
 
 // PreUpgrade ensures that the MemSQL cluster is healthy
 func PreUpgrade() error {
+	log.Printf("Pre-upgrade Check Started")
+
 	// Create new spinner to show activity of health check
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = " "
-	s.Suffix = fmt.Sprint(" Running Health Check")
-	s.FinalMSG = fmt.Sprint(" ✓ Health Check complete\n")
-	s.Start()
-	defer s.Stop()
-
-	log.Printf("PreUpgrade Check Started")
 
 	// MemSQL Ops version Check
 	version, _ := util.OpsVersionCheck()
 	major, _ := strconv.Atoi(version[0])
 	minor, _ := strconv.Atoi(version[1])
 
+	s.Suffix = fmt.Sprintf(" Checking MemSQL Ops Version")
+	s.FinalMSG = fmt.Sprintf("✓ MemSQL Ops Version: %d.%d\n", major, minor)
+	s.Start()
+
 	// Ops 5.7 or higher is required
 	if !(major >= 5 && minor >= 7) {
 		return fmt.Errorf("Online upgrade requires MemSQL Ops Version 5.7 or higher. Found: %d.%d", major, minor)
 	}
-	fmt.Printf("MemSQL Ops Version = %d.%d", major, minor)
+	s.Stop()
 
 	// Check redundancy level. Redundancy level must be 2 (HA)
 	redundancyLevel, err := util.DBGetVariable("redundancy_level")
 	if err != nil {
 		return err
 	}
+	s.Suffix = fmt.Sprintf(" Checking Redundancy Level")
+	s.FinalMSG = fmt.Sprintf("✓ Redundancy Level: %s\n", redundancyLevel)
+	s.Start()
 	if redundancyLevel != "2" {
 		return ErrRedundancyLevel
 	}
 	log.Printf("Redundancy Level = %s", redundancyLevel)
+	s.Stop()
 
 	// Get agent list from MemSQL Ops
+	s.Suffix = fmt.Sprintf(" Checking Online Agents")
+	s.FinalMSG = fmt.Sprintln("✓ All Agents Online")
+	s.Start()
+
 	agents, err := util.OpsAgentList()
 	if err != nil {
 		return err
@@ -67,8 +74,13 @@ func PreUpgrade() error {
 		}
 		log.Printf("Agent %s is %s [%s:%d]", agent.AgentID, agent.State, agent.Host, agent.Port)
 	}
+	s.Stop()
 
 	// Get a list of MemSQL nodes
+	s.Suffix = fmt.Sprintf(" Checking Online Nodes")
+	s.FinalMSG = fmt.Sprintln("✓ All Nodes Online")
+	s.Start()
+
 	memsqls, err := util.OpsMemsqlList()
 	if err != nil {
 		return err
@@ -88,8 +100,12 @@ func PreUpgrade() error {
 		}
 		log.Printf("MemSQL Node %s is %s and %s", memsql.MemsqlID, memsql.State, memsql.ClusterState)
 	}
+	s.Stop()
 
 	// ExplainRestoreRedundancy for all user databases
+	s.Suffix = fmt.Sprintf(" Verifying Cluster Is Balanced")
+	s.FinalMSG = fmt.Sprintln("✓ Cluster Is Balanced")
+	s.Start()
 	RestoreRedundancyCount := 0
 	dbs, err := util.DBGetUserDatabases()
 	if err != nil {
@@ -106,6 +122,7 @@ func PreUpgrade() error {
 	if RestoreRedundancyCount > 0 {
 		return fmt.Errorf("preUpgrade: Unbalanced Cluster. See EXPLAIN RESTORE REDUNDANCY")
 	}
+	s.Stop()
 
 	log.Printf("PreUpgrade Completed Successfully")
 

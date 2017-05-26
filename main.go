@@ -23,19 +23,19 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Failed to setup logging: %s", err))
 	}
-	// TODO: Print message to STDOUT that log file was created and is named x
 
 	util.GetUserConfirmation("memsql-online-upgrade will execute various steps to upgrade your cluster. While there are steps to check your cluster is healthy, it is recommended that you backup and double check your cluster is in a healthy status prior to starting the upgrade.", "Type START to begin the upgrade: ", "START")
 
 	// Defer closing the log file until upgrade is complete
 	defer logFinalizer()
+	fmt.Println("\nLog file opened: ", config.LogPath)
 
 	// Connect to MemSQL
 	if err := util.ConnectToMemSQL(config); err != nil {
 		fmt.Printf("Connection to MemSQL Failed. Please check the configuration and try again.\n")
 		log.Fatalf("Failed to connect to MemSQL: %s", err)
 	}
-	fmt.Println("Connected to MemSQL")
+	fmt.Printf("Connected to MemSQL: %s:%d\n\n", config.MasterHost, config.MasterPort)
 
 	// Run health checks
 	fmt.Println("Running Health Check")

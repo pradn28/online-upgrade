@@ -15,7 +15,7 @@ func SetupLogging(config Config) (func(), error) {
 	log.SetOutput(f)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	log.Printf("Opening log file")
+	log.Printf("Opening log file %s: ", config.LogPath)
 
 	return func() {
 		err := f.Close()
